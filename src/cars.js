@@ -1,39 +1,57 @@
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const db = require('./db');
+const pool = require("./db");  // ← IMPORTANTE
 
-router.get('/', async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM cars');
+// Listar todos los coches
+router.get("/", async (req, res) => {
+  const [rows] = await pool.query("SELECT * FROM cars");
   res.json(rows);
 });
 
-router.get('/:id', async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM cars WHERE id = ?', [req.params.id]);
-  res.json(rows[0] || {});
+// Obtener coche por ID
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const [rows] = await pool.query("SELECT * FROM cars WHERE id = ?", [id]);
+
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "Coche no encontrado" });
+  }
+
+  res.json(rows[0]);
 });
 
-router.post('/', async (req, res) => {
-  const { brand, model, year, price } = req.body;
-  const [result] = await db.query(
-    'INSERT INTO cars (brand, model, year, price) VALUES (?, ?, ?, ?)',
-    [brand, model, year, price]
+// Crear coche
+router.post("/", async (req, res) => {
+  const { marca, modelo, year } = req.body;
+
+  const [result] = await pool.query(
+    "INSERT INTO cars (marca, modelo, year) VALUES (?, ?, ?)",
+    [marca, modelo, year]
   );
-  res.json({ id: result.insertId, brand, model, year, price });
+
+  res.json({ id: result.insertId, marca, modelo, year });
 });
 
-router.put('/:id', async (req, res) => {
-  const { brand, model, year, price } = req.body;
-  await db.query(
-    'UPDATE cars SET brand=?, model=?, year=?, price=? WHERE id=?',
-    [brand, model, year, price, req.params.id]
+// Actualizar coche
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { marca, modelo, year } = req.body;
+
+  await pool.query(
+    "UPDATE cars SET marca = ?, modelo = ?, year = ? WHERE id = ?",
+    [marca, modelo, year, id]
   );
-  res.json({ message: 'Coche actualizado' });
+
+  res.json({ id, marca, modelo, year });
 });
 
-router.delete('/:id', async (req, res) => {
-  await db.query('DELETE FROM cars WHERE id=?', [req.params.id]);
-  res.json({ message: 'Coche eliminado' });
+// Eliminar coche
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  await pool.query("DELETE FROM cars WHERE id = ?", [id]);
+
+  res.json({ message: "Coche eliminado" });
 });
 
 module.exports = router;
