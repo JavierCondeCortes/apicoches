@@ -18,7 +18,7 @@ services:
       retries: 10
 
   api:
-    build: .
+    build: mineclasero/apicoches-api:latest
     ports:
       - "8443:3000"
     env_file:
